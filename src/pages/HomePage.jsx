@@ -26,7 +26,7 @@ const HomePage = () => {
     setActiveMenuItem(item.title);
     if (item.title === "Cerrar sesión") {
       localStorage.removeItem("user");
-      localStorage.removeItem("token"); // Clear token as well
+      localStorage.removeItem("token");
       navigate("/login");
     }
     setIsMenuOpen(false);
@@ -44,17 +44,13 @@ const HomePage = () => {
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 20, stiffness: 150 }}
           >
-            <div className="sidebar-header">
-              <h1>PLATAFORMA DE PAGOS</h1>
-              <motion.button
-                className="close-btn"
-                onClick={() => setIsMenuOpen(false)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                ✕
-              </motion.button>
+          <div className="user-profile">
+            <img src="/b.png" alt="Usuario" className="user-avatar" />
+            <div className="user-details">
+              <p className="user-name">Usuario 01</p>
+              <span className="user-role">Administrador</span>
             </div>
+          </div>
             <nav className="menu">
               <ul>
                 {menuItems.map((item, index) => (
@@ -63,7 +59,10 @@ const HomePage = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                    whileHover={{
+                      scale: 1.05,
+                      backgroundColor: "rgba(255, 255, 255, 0.15)",
+                    }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleMenuItemClick(item)}
                     className={activeMenuItem === item.title ? "active" : ""}
@@ -77,6 +76,11 @@ const HomePage = () => {
                 ))}
               </ul>
             </nav>
+
+            <div className="config-fixed">
+              <span>Configuración</span>
+              <span>⚙️</span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -104,19 +108,20 @@ const HomePage = () => {
               <span>☰</span>
               <span>Menú</span>
             </motion.button>
+
             <motion.button
-              className="config-button"
-              whileHover={{ scale: 1.1 }}
+              className="notification-button"
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <span>Configuración</span>
-              <span>⚙️</span>
+              <span>Notificaciones</span>
+              <span>🔔</span>
             </motion.button>
           </div>
 
           {/* Main Content */}
           <div className="home-content">
-            {/* Left Column (Text) */}
+            {/* Left Column */}
             <motion.div
               className="home-text"
               initial={{ x: -50, opacity: 0 }}
@@ -156,7 +161,7 @@ const HomePage = () => {
               </motion.button>
             </motion.div>
 
-            {/* Right Column (Video) */}
+            {/* Right Column */}
             <motion.div
               className="home-video"
               initial={{ x: 50, opacity: 0 }}
