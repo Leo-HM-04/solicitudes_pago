@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react"; // Removed 'use'
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -8,12 +8,29 @@ const HomePage = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeMenuItem, setActiveMenuItem] = useState("Pagina de inicio");
+  const [currentTime, setCurrentTime] = useState(new Date());
   const sidebarRef = useRef(null);
-  const [isLoggingOut, setIsLoggingOut] = useState(false); // Added for logout animation
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // Dashboard stats state
+  const [dashboardStats] = useState({
+    totalPayments: 1250,
+    pendingRequests: 23,
+    completedToday: 45,
+    totalUsers: 89,
+    monthlyRevenue: 125000
+  });
   useEffect(() => {
     if (!user) navigate("/");
   }, [user, navigate]);
+
+  // Update time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -39,7 +56,6 @@ const HomePage = () => {
     { title: "Centro de administración", icon: "⚙️" },
     { title: "Cerrar sesión", icon: "🚪" },
   ];
-
   const handleMenuItemClick = (item) => {
     setActiveMenuItem(item.title);
     if (item.title === "Cerrar sesión") {
@@ -49,10 +65,52 @@ const HomePage = () => {
         localStorage.removeItem("token");
         navigate("/");
       }, 500);
+    } else if (item.title === "Centro de administración") {
+      navigate("/usuarios");
     } else {
       setIsMenuOpen(false);
+      // Aquí se pueden agregar más navegaciones según el item seleccionado
     }
   };
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('es-ES', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false 
+    });
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('es-ES', { 
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Dashboard widget component
+  const DashboardWidget = ({ title, value, icon, trend, color = "blue" }) => (
+    <motion.div
+      className={`dashboard-widget widget-${color}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02, boxShadow: "0 8px 25px rgba(0,0,0,0.1)" }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="widget-header">
+        <span className="widget-icon">{icon}</span>
+        <span className="widget-title">{title}</span>
+      </div>
+      <div className="widget-value">{value}</div>
+      {trend && (
+        <div className={`widget-trend ${trend > 0 ? 'positive' : 'negative'}`}>
+          {trend > 0 ? '↗' : '↘'} {Math.abs(trend)}%
+        </div>
+      )}
+    </motion.div>
+  );
 
   return (
     <div className="app-container" role="main">
@@ -72,12 +130,14 @@ const HomePage = () => {
             }}
             aria-label="Menu lateral"
             ref={sidebarRef}
-          >
-            <div className="user-profile">
+          >            <div className="user-profile">
               <img src="/b.png" alt="Avatar del usuario" className="user-avatar" />
               <div className="user-details">
-                <p className="user-name">Usuario 01</p>
+                <p className="user-name">{user?.name || 'Administrador'}</p>
                 <span className="user-role">Administrador</span>
+                <div className="user-time">
+                  <small>{formatTime(currentTime)}</small>
+                </div>
               </div>
             </div>
             <nav className="menu" role="navigation">
@@ -134,8 +194,7 @@ const HomePage = () => {
           transition={{ duration: 0.5 }}
           role="region"
           aria-label="Contenido principal"
-        >
-          {/* Header */}
+        >          {/* Header */}
           <div className="home-header">
             <motion.button
               className="menu-button"
@@ -147,6 +206,14 @@ const HomePage = () => {
               <span>☰</span>
               <span>Menú</span>
             </motion.button>
+            
+            <div className="header-info">
+              <div className="date-time">
+                <h3>{formatDate(currentTime)}</h3>
+                <p>{formatTime(currentTime)}</p>
+              </div>
+            </div>
+
             <motion.button
               className="notification-button"
               whileHover={{ scale: 1.05 }}
@@ -154,9 +221,9 @@ const HomePage = () => {
               aria-label="Notificaciones"
             >
               <span>Notificaciones</span>
-              <span>🔔</span>
-            </motion.button>
-          </div>
+              <span className="notification-badge">🔔</span>
+              <span className="badge-count">3</span>
+            </motion.button>          </div>
 
           {/* Main Content */}
           <div className="home-content">
@@ -193,36 +260,43 @@ const HomePage = () => {
                     {char}
                   </motion.span>
                 ))}
-              </motion.h1>
-              <motion.h2
-                className="subtitle"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                Aprende a usar la nueva plataforma de bechapra.
-              </motion.h2>
+              </motion.h1>              
+              
               <motion.p
                 className="description"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6, duration: 0.5 }}
               >
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-                exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                Desde aquí puedes gestionar todos los aspectos de la plataforma de pagos. 
+                Supervisa las transacciones, administra usuarios, genera reportes y mantén 
+                el control total del sistema financiero.
               </motion.p>
-              <motion.button
-                className="help-button"
-                whileHover={{
-                  scale: 1.05,
-                  boxShadow: "0 5px 15px rgba(30, 64, 175, 0.3)",
-                }}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Obtener ayuda"
-              >
-                ¿Necesitas ayuda?
-              </motion.button>
+              <div className="action-buttons">
+                <motion.button
+                  className="help-button primary"
+                  whileHover={{
+                    scale: 1.05,
+                    boxShadow: "0 5px 15px rgba(30, 64, 175, 0.3)",
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate("/usuarios")}
+                  aria-label="Ir a gestión de usuarios"
+                >
+                  Gestionar Usuarios
+                </motion.button>
+                <motion.button
+                  className="help-button secondary"
+                  whileHover={{
+                    scale: 1.05,
+                    boxShadow: "0 5px 15px rgba(0, 0, 0, 0.1)",
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label="Ver reportes"
+                >
+                  Ver Reportes
+                </motion.button>
+              </div>
             </motion.div>
 
             {/* Right Column */}
@@ -237,8 +311,7 @@ const HomePage = () => {
                 onHoverStart={() => setIsHovered(true)}
                 onHoverEnd={() => setIsHovered(false)}
                 whileHover={{ scale: 1.03 }}
-              >
-                <img src="/be.png" alt="Video tutorial" className="video-thumbnail" />
+              >                <img src="/be.png" alt="Panel de administración" className="video-thumbnail" />
                 <motion.div
                   className="play-button"
                   animate={{
@@ -246,11 +319,10 @@ const HomePage = () => {
                     backgroundColor: isHovered ? "#ffffff" : "rgba(255, 255, 255, 0.9)",
                   }}
                   transition={{ duration: 0.8 }}
-                  aria-label="Reproducir video"
+                  aria-label="Ver tutorial del panel"
                 >
                   <span className="play-icon">▶️</span>
-                </motion.div>
-              </motion.div>
+                </motion.div>              </motion.div>
             </motion.div>
           </div>
         </motion.div>
