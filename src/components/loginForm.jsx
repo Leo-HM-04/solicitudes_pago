@@ -6,9 +6,9 @@ const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [bloqueadoTemporal, setBloqueadoTemporal] = useState(false); // Para bloqueo temporal
+  const [bloqueadoTemporal, setBloqueadoTemporal] = useState(false);
   const [bloqueoPermanente, setBloqueoPermanente] = useState(false);
-  const [tiempoRestante, setTiempoRestante] = useState(15); // Inicializado con 15 segundos
+  const [tiempoRestante, setTiempoRestante] = useState(15);
   const navigate = useNavigate();
 
   // Temporizador para desbloqueo temporal
@@ -20,9 +20,10 @@ const LoginForm = () => {
           if (prev <= 1) {
             clearInterval(timer);
             setBloqueadoTemporal(false);
-            // Mensaje al expirar el bloqueo temporal, indicando que tiene un último intento
-            setError("¡Atención! Has sido desbloqueado temporalmente. Te queda un último intento antes del bloqueo permanente.");
-            return 15; // Resetear el tiempo para la próxima vez
+            setError(
+              "¡Atención! Has sido desbloqueado temporalmente. Te queda un último intento antes del bloqueo permanente."
+            );
+            return 15;
           }
           return prev - 1;
         });
@@ -33,9 +34,9 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (bloqueadoTemporal || bloqueoPermanente) return; // Evita envíos si está bloqueado
+    if (bloqueadoTemporal || bloqueoPermanente) return;
 
-    setError(""); // Limpiar errores anteriores
+    setError("");
 
     try {
       const result = await authService.login(email, password);
@@ -51,15 +52,13 @@ const LoginForm = () => {
     } catch (err) {
       const mensaje = err.message || "Error al iniciar sesión.";
 
-      // Bloqueo permanente
       if (mensaje.toLowerCase().includes("bloqueada permanentemente")) {
         setBloqueoPermanente(true);
         setError("Cuenta bloqueada permanentemente. Contacta al administrador.");
-        setBloqueadoTemporal(false); // Asegúrate de que el estado de bloqueo temporal se desactive
+        setBloqueadoTemporal(false);
         return;
       }
 
-      // Bloqueo temporal
       const regexTiempo = /(\d+)\s*segundos?/i;
       const matchTiempo = mensaje.match(regexTiempo);
       if (matchTiempo) {
@@ -67,19 +66,17 @@ const LoginForm = () => {
         setTiempoRestante(segundos);
         setBloqueadoTemporal(true);
         setError(`Demasiados intentos. Tu cuenta está bloqueada por ${segundos} segundos.`);
-        setBloqueoPermanente(false); // Asegúrate de que el estado de bloqueo permanente se desactive
+        setBloqueoPermanente(false);
         return;
       }
 
-      // Último intento antes del bloqueo permanente
       if (mensaje.toLowerCase().includes("último intento antes del bloqueo permanente")) {
         setError("Contraseña incorrecta. ¡Cuidado! Es tu último intento antes del bloqueo permanente.");
-        setBloqueadoTemporal(false); // Ya no está bloqueado temporalmente, ahora tiene un intento
-        setBloqueoPermanente(false); // No está bloqueado permanentemente todavía
+        setBloqueadoTemporal(false);
+        setBloqueoPermanente(false);
         return;
       }
 
-      // Mensaje de intentos restantes antes del bloqueo temporal
       const regexIntento = /Intento\s*(\d+)\s*de\s*(\d+)/i;
       const matchIntento = mensaje.match(regexIntento);
       if (matchIntento) {
@@ -89,48 +86,63 @@ const LoginForm = () => {
         return;
       }
 
-      // Mensaje genérico para cualquier otra credencial inválida
       setError(mensaje);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{ display: "flex", flexDirection: "column", width: "300px" }}
-    >
-      <h2>Iniciar Sesión</h2>
-
-      {error && <p style={{ color: bloqueoPermanente ? "darkred" : "red" }}>{error}</p>}
-
-      {bloqueadoTemporal && !bloqueoPermanente && (
-        <p style={{ color: "orange" }}>
-          Intenta nuevamente en {tiempoRestante} segundos.
-        </p>
-      )}
-
-      <input
-        type="email"
-        placeholder="Correo electrónico"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        disabled={bloqueadoTemporal || bloqueoPermanente}
-      />
-
-      <input
-        type="password"
-        placeholder="Contraseña"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        disabled={bloqueadoTemporal || bloqueoPermanente}
-      />
-
-      <button type="submit" disabled={bloqueadoTemporal || bloqueoPermanente}>
-        Entrar
-      </button>
-    </form>
+    <div className="login-form-wrapper">
+      <div className="logo-container">
+        <img src="/bechapra.png" alt="Bechapra Logo" className="logo" />
+      </div>
+      <div className="form-container">
+        <h2 className="text-3xl font-semibold text-white text-center mb-8">Inicio de sesión</h2>
+        {error && (
+          <p style={{ color: bloqueoPermanente ? "darkred" : "red", textAlign: "center" }}>{error}</p>
+        )}
+        {bloqueadoTemporal && !bloqueoPermanente && (
+          <p style={{ color: "orange", textAlign: "center" }}>
+            Intenta nuevamente en {tiempoRestante} segundos.
+          </p>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-white font-medium mb-2 text-lg">Usuario:</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="correo@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={bloqueadoTemporal || bloqueoPermanente}
+              className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-white font-medium mb-2 text-lg">Contraseña:</label>
+            <input
+              id="password"
+              type="password"
+              placeholder="Mayús activado"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={bloqueadoTemporal || bloqueoPermanente}
+              className="w-full px-4 py-2 rounded-lg bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={bloqueadoTemporal || bloqueoPermanente}
+            className="w-full py-2 px-4 bg-white text-blue-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+          >
+            Ingresar
+          </button>
+        </form>
+      </div>
+      <a href="#" className="help-link">¿Problemas para iniciar sesión? Contacta con administración</a>
+    </div>
   );
 };
 

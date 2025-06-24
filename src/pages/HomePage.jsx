@@ -1,64 +1,123 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { motion } from "framer-motion";
 
 const HomePage = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (!user) navigate("/");
-  }, [user]);
+  }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-blue-700 text-white p-6 rounded-3xl">
-      {/* Header superior */}
-      <div className="flex justify-between items-center mb-6">
-        <button className="bg-white text-blue-700 px-4 py-2 rounded-md flex items-center gap-2 shadow-md">
-          <span className="text-xl">☰</span>
-          <span className="font-medium">Menú</span>
-        </button>
-        <button className="bg-white text-blue-700 px-4 py-2 rounded-md flex items-center gap-2 shadow-md">
-          <span>Notificaciones</span>
-          <span className="text-xl">🔔</span>
-        </button>
+    <motion.div 
+      className="home-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header */}
+      <div className="home-header">
+        <motion.button
+          className="menu-button"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <span>☰</span>
+          <span>Menú</span>
+        </motion.button>
+        <motion.button
+          className="notifications-button"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <span>Rectificaciones</span>
+          <span>🔔</span>
+        </motion.button>
       </div>
 
       {/* Contenido principal */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+      <div className="home-content">
         {/* Columna izquierda */}
-        <div>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
+        <motion.div 
+          className="home-text"
+          initial={{ x: -50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <motion.h1 
+            className="title"
+            whileHover={{ scale: 1.02 }}
+          >
             PLATAFORMA DE PAGOS
-          </h1>
-          <h2 className="text-2xl mb-4 font-medium">
+          </motion.h1>
+          
+          <motion.h2
+            className="subtitle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
             Aprende a usar la nueva plataforma de bechapra.
-          </h2>
-          <p className="text-white/90 mb-6">
+          </motion.h2>
+          
+          <motion.p
+            className="description"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
             incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
             exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-          </p>
-          <button className="bg-white text-blue-700 font-semibold px-5 py-2 rounded-md shadow">
+          </motion.p>
+          
+          <motion.button
+            className="help-button"
+            whileHover={{ 
+              scale: 1.05,
+              boxShadow: "0 5px 15px rgba(26, 35, 126, 0.3)"
+            }}
+            whileTap={{ scale: 0.95 }}
+          >
             ¿Necesitas ayuda?
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* Columna derecha: Video */}
-        <div className="relative rounded-md overflow-hidden shadow-lg">
-          <img
-            src="/video-thumbnail.png" // <- Reemplaza esto con la ruta de tu imagen
-            alt="Video tutorial"
-            className="w-full rounded-md"
-          />
-          <div className="absolute inset-0 flex justify-center items-center">
-            <div className="bg-white text-blue-700 rounded-full p-4 shadow-lg cursor-pointer">
-              <span className="text-4xl">▶</span>
-            </div>
-          </div>
-        </div>
+        <motion.div 
+          className="home-video"
+          initial={{ x: 50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <motion.div 
+            className="video-container"
+            onHoverStart={() => setIsHovered(true)}
+            onHoverEnd={() => setIsHovered(false)}
+            whileHover={{ scale: 1.02 }}
+          >
+            <img
+              src="/b.png"
+              alt="Video tutorial"
+              className="video-thumbnail"
+            />
+            <motion.div 
+              className="play-button"
+              animate={{
+                scale: isHovered ? 1.1 : 1,
+                backgroundColor: isHovered ? "rgba(255, 255, 255, 1)" : "rgba(255, 255, 255, 0.9)"
+              }}
+            >
+              ▶
+            </motion.div>
+          </motion.div>
+          <div className="video-author">uxchristopher</div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
