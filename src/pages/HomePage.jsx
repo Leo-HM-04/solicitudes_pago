@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react"; // Removed 'use'
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -8,10 +8,28 @@ const HomePage = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeMenuItem, setActiveMenuItem] = useState("Pagina de inicio");
+  const sidebarRef = useRef(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // Added for logout animation
 
   useEffect(() => {
     if (!user) navigate("/");
   }, [user, navigate]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const menuItems = [
     { title: "Pagina de inicio", icon: "🏠" },
@@ -25,15 +43,19 @@ const HomePage = () => {
   const handleMenuItemClick = (item) => {
     setActiveMenuItem(item.title);
     if (item.title === "Cerrar sesión") {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      navigate("/login");
+      setIsLoggingOut(true);
+      setTimeout(() => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/");
+      }, 500);
+    } else {
+      setIsMenuOpen(false);
     }
-    setIsMenuOpen(false);
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container" role="main">
       {/* Sidebar */}
       <AnimatePresence>
         {isMenuOpen && (
@@ -41,17 +63,24 @@ const HomePage = () => {
             className="sidebar"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", damping: 20, stiffness: 150 }}
+            exit={{ x: "-100%", opacity: isLoggingOut ? 0 : 1 }}
+            transition={{
+              type: "spring",
+              damping: 20,
+              stiffness: 150,
+              duration: isLoggingOut ? 0.5 : 0,
+            }}
+            aria-label="Menu lateral"
+            ref={sidebarRef}
           >
-          <div className="user-profile">
-            <img src="/b.png" alt="Usuario" className="user-avatar" />
-            <div className="user-details">
-              <p className="user-name">Usuario 01</p>
-              <span className="user-role">Administrador</span>
+            <div className="user-profile">
+              <img src="/b.png" alt="Avatar del usuario" className="user-avatar" />
+              <div className="user-details">
+                <p className="user-name">Usuario 01</p>
+                <span className="user-role">Administrador</span>
+              </div>
             </div>
-          </div>
-            <nav className="menu">
+            <nav className="menu" role="navigation">
               <ul>
                 {menuItems.map((item, index) => (
                   <motion.li
@@ -66,21 +95,28 @@ const HomePage = () => {
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleMenuItemClick(item)}
                     className={activeMenuItem === item.title ? "active" : ""}
+                    aria-label={item.title}
                   >
-                    <span className="menu-icon">{item.icon}</span>
+                    <span className="menu-icon" aria-hidden="true">
+                      {item.icon}
+                    </span>
                     {item.title}
                     {["Reportes de actividad", "Centro de administración"].includes(item.title) && (
-                      <span className="sub-item-indicator"></span>
+                      <span className="sub-item-indicator" aria-hidden="true"></span>
                     )}
                   </motion.li>
                 ))}
               </ul>
             </nav>
-
-            <div className="config-fixed">
-              <span>Configuración</span>
-              <span>⚙️</span>
-            </div>
+            <motion.button
+              className="close-btn"
+              onClick={() => setIsMenuOpen(false)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              aria-label="Cerrar menú"
+            >
+              ✕
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -96,6 +132,8 @@ const HomePage = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
+          role="region"
+          aria-label="Contenido principal"
         >
           {/* Header */}
           <div className="home-header">
@@ -104,15 +142,16 @@ const HomePage = () => {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Abrir menú"
             >
               <span>☰</span>
               <span>Menú</span>
             </motion.button>
-
             <motion.button
               className="notification-button"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              aria-label="Notificaciones"
             >
               <span>Notificaciones</span>
               <span>🔔</span>
@@ -128,8 +167,32 @@ const HomePage = () => {
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
-              <motion.h1 className="title" whileHover={{ scale: 1.02 }}>
-                PLATAFORMA DE PAGOS
+              <motion.h1
+                className="title"
+                style={{ 
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "1.8rem", 
+                    textAlign: "center",
+                     }}
+              >
+                {"PLATAFORMA DE PAGOS".split(" ").map((char, index) => (
+                  <motion.span
+                    key={index}
+                    animate={{ color: ["#ffffff", "#93c5fd", "#ffffff"] }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: index * 0.4,
+                    }}
+                    style={{ fontSize: "2.5rem", fontWeight: "800", textTransform: "uppercase" }}
+                  >
+                    {char}
+                  </motion.span>
+                ))}
               </motion.h1>
               <motion.h2
                 className="subtitle"
@@ -156,6 +219,7 @@ const HomePage = () => {
                   boxShadow: "0 5px 15px rgba(30, 64, 175, 0.3)",
                 }}
                 whileTap={{ scale: 0.95 }}
+                aria-label="Obtener ayuda"
               >
                 ¿Necesitas ayuda?
               </motion.button>
@@ -174,19 +238,19 @@ const HomePage = () => {
                 onHoverEnd={() => setIsHovered(false)}
                 whileHover={{ scale: 1.03 }}
               >
-                <img src="/b.png" alt="Video tutorial" className="video-thumbnail" />
+                <img src="/be.png" alt="Video tutorial" className="video-thumbnail" />
                 <motion.div
                   className="play-button"
                   animate={{
                     scale: isHovered ? 1.1 : 1,
                     backgroundColor: isHovered ? "#ffffff" : "rgba(255, 255, 255, 0.9)",
                   }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.8 }}
+                  aria-label="Reproducir video"
                 >
-                  ▶
+                  <span className="play-icon">▶️</span>
                 </motion.div>
               </motion.div>
-              <div className="video-author">uxchristopher</div>
             </motion.div>
           </div>
         </motion.div>

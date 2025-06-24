@@ -5,11 +5,10 @@ import ProtectedRoute from "./ProtectedRoute";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import HomePage from "./pages/HomePage";
 import "./index.css"; // Ensure this includes the login form styles
-import "./App.css"; // Add global app styles
 import "./styles/login/index.css"
 import "./styles/home/index.css"
 
-function App() {
+function App() { 
   return (
     <div id="app">
       <BrowserRouter>
