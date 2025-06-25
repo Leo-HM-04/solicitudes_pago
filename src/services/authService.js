@@ -1,10 +1,8 @@
-import axios from "axios";
-
-const API_URL = "http://localhost:4000/api/auth";
+import axios from "./axiosConfig";
 
 const login = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/login`, {
+    const response = await axios.post("/auth/login", {
       email,
       password,
     });

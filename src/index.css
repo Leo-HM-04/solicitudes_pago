@@ -31,37 +31,6 @@ body {
   min-height: 100vh;
 }
 
-/* Responsive text scaling mejorado */
-@media (max-width: 1440px) {
-  html {
-    font-size: 15px;
-  }
-}
-
-@media (max-width: 1200px) {
-  html {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 768px) {
-  html {
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 480px) {
-  html {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 320px) {
-  html {
-    font-size: 11px;
-  }
-}
-
 /* Global utility classes */
 .container {
   width: 100%;
@@ -107,12 +76,6 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-}
-
-@media (max-width: 768px) {
-  .flex-responsive {
-    flex-direction: column;
-  }
 }
 
 /* Scrollbar styling */
@@ -198,7 +161,6 @@ p, span, div, button, input, select, textarea, label {
   margin: 0 auto;
 }
 
-
 /* Tabla responsiva universal */
 .table-responsive {
   overflow-x: auto;
@@ -269,4 +231,20 @@ html {
 /* Animaciones suaves para cambios de layout */
 * {
   transition: width 0.3s ease, height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+}
+
+/* Specific overrides for layout pages */
+.app-container, .app-container * {
+  max-width: none !important;
+}
+
+.app-container {
+  width: 100vw !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+.main-content {
+  width: 100% !important;
+  max-width: none !important;
 }

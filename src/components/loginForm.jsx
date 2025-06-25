@@ -69,7 +69,7 @@ const LoginForm = () => {
   return (
     <div className="login-wrapper">
       <div className="logo-box">
-        <img src="/bechapra.png" alt="Logo" className="logo-img" />
+        <img src="/Logo_16x9_AzulSinFondo@2x.png" alt="Logo" className="logo-img" />
       </div>
       <div className="login-box">
         <h2>Inicio de sesión</h2>

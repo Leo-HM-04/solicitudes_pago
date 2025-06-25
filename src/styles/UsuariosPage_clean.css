@@ -1,28 +1,30 @@
-/* Consolidated Users Page Styles */
-/* Base styles */
+/* Users Page Styles - Protocolo HomePage */
+/* Fuente Montserrat para toda la aplicación */
 *, *::before, *::after {
-  font-family: 'Montserrat', sans-serif !important;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
   box-sizing: border-box;
 }
 
-/* Main container */
-.users-page .app-container {
+/* Contenedor principal optimizado */
+.app-container {
   display: flex;
   min-height: 100vh;
   width: 100vw;
+  max-width: 100%;
   overflow-x: hidden;
 }
 
-.users-page .main-content {
+.main-content {
   flex: 1;
   min-height: 100vh;
   background: #f8fafc;
   transition: margin-left 0.3s ease;
   width: 100%;
+  overflow-x: hidden;
+  position: relative;
   padding: 1rem;
 }
 
-/* Users container */
 .users-container {
   padding: 2rem;
   min-height: 70vh;
@@ -30,12 +32,14 @@
   max-width: 1200px;
   background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
   margin: 2rem auto;
+  position: relative;
   border-radius: 30px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   color: white;
+  box-sizing: border-box;
 }
 
-/* Header styles */
+/* Header con estilo similar a HomePage */
 .users-header {
   display: flex;
   justify-content: space-between;
@@ -45,12 +49,23 @@
   padding: 1rem 2rem;
   border-radius: 15px;
   backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
+/* Botones del header */
 .menu-button,
 .add-user-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
   background-color: rgba(255, 255, 255, 0.9);
   color: #1e40af;
 }
@@ -58,6 +73,25 @@
 .menu-button:hover,
 .add-user-button:hover {
   background-color: white;
+}
+
+.header-info {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.date-time h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: white;
+}
+
+.date-time p {
+  margin: 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* Títulos con tema consistente */
@@ -519,132 +553,7 @@
   transform: none;
 }
 
-/* Sidebar styles */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 280px;
-  height: 100vh;
-  background: #0044ff; /* Cambiado a color solicitado */
-  color: white;
-  z-index: 1200;
-  box-shadow: 2px 0 16px rgba(30, 64, 175, 0.15);
-  display: flex;
-  flex-direction: column;
-  padding: 2rem 1.2rem 1rem 1.2rem;
-  transition: left 0.3s ease;
-}
-
-.sidebar .user-profile {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.sidebar .user-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #fff;
-  object-fit: cover;
-  border: 2px solid #3b82f6;
-}
-
-.sidebar .user-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.sidebar .user-name {
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: #fff;
-}
-
-.sidebar .user-role {
-  font-size: 0.9rem;
-  color: #c7d2fe;
-}
-
-.sidebar .user-time small {
-  color: #e0e7ff;
-  font-size: 0.85rem;
-}
-
-.menu {
-  flex: 1;
-}
-
-.menu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.menu li {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.9rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background 0.2s, color 0.2s;
-  margin-bottom: 0.2rem;
-}
-
-.menu li .menu-icon {
-  font-size: 1.3rem;
-}
-
-.menu li.active,
-.menu li:hover {
-  background: rgba(255,255,255,0.15);
-  color: #fff;
-  /* Si quieres resaltar más el activo, puedes agregar un borde: */
-  border-left: 4px solid #0044ff;
-}
-
-.menu li .sub-item-indicator {
-  margin-left: auto;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #60a5fa;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 1.7rem;
-  position: absolute;
-  top: 1.2rem;
-  right: 1.2rem;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-  border-radius: 50%;
-  padding: 0.2rem 0.5rem;
-}
-
-.close-btn:hover {
-  background: #0044ff;
-  color: #fbbf24;
-}
-
-/* Responsive: hide sidebar on small screens unless open */
-@media (max-width: 768px) {
-  .sidebar {
-    width: 90vw;
-    max-width: 320px;
-    padding: 1.2rem 0.7rem 1rem 0.7rem;
-  }
-}
-
+/* Responsive */
 @media (max-width: 1024px) {
   .users-container {
     width: 95%;

@@ -31,8 +31,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute allowedRoles={["admin_general", "solicitante", "aprobador", "pagador_banca"]}>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
-          <Route path="/home" element={<HomePage />} />
         </Routes>
       </BrowserRouter>
     </div>

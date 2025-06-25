@@ -1,7 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import SolicitudService from "../services/SolicitudService";
+import Sidebar from "../components/Sidebar";
+import { useSidebar } from "../hooks/useSidebar";
 import "../styles/SolicitudesPage.css";
 
 const SolicitudesPage = () => {
@@ -15,44 +17,44 @@ const SolicitudesPage = () => {
     fecha_limite_pago: "",
     soporte_url: "",
   });
+  const [editandoId, setEditandoId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeMenuItem, setActiveMenuItem] = useState("Solicitar un pago");
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
-  const [approvalData, setApprovalData] = useState({ estado: "", comentario: "" });
-  const [isMenuMinimized, setIsMenuMinimized] = useState(false);
-  const sidebarRef = useRef(null);
+  const [selectedSolicitud, setSelectedSolicitud] = useState(null);
+  const [approvalData, setApprovalData] = useState({ estado: "", comentario_aprobador: "" });
+  const [filterStatus, setFilterStatus] = useState("todas");
   const navigate = useNavigate();
   
+  // Use custom sidebar hook
+  const {
+    isMenuOpen,
+    activeMenuItem,
+    isLoggingOut,
+    setActiveMenuItem,
+    setIsLoggingOut,
+    toggleMenu,
+    closeMenu
+  } = useSidebar("Estado de solicitudes");
+  
   const user = JSON.parse(localStorage.getItem("user"));
-  const isAdmin = user?.rol === "admin_general";
-  const isAprobador = user?.rol === "aprobador";
-  const isSolicitante = user?.rol === "solicitante";
-
-  // Stats for dashboard
-  const solicitudesStats = {
-    total: solicitudes.length,
-    pendientes: solicitudes.filter(s => s.estado === 'pendiente').length,
-    autorizadas: solicitudes.filter(s => s.estado === 'autorizada').length,
-    rechazadas: solicitudes.filter(s => s.estado === 'rechazada').length,
-  };
-
   const [screenSize, setScreenSize] = useState(window.innerWidth);
 
   useEffect(() => {
-    const handleResize = () => setScreenSize(window.innerWidth);
+    const handleResize = () => {
+      setScreenSize(window.innerWidth);
+    };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
     return () => clearInterval(timer);
   }, []);
 
@@ -62,12 +64,12 @@ const SolicitudesPage = () => {
         setIsMenuOpen(false);
       }
     };
-
     if (isMenuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [isMenuOpen]);
 
   const fetchSolicitudes = async () => {
@@ -101,36 +103,6 @@ const SolicitudesPage = () => {
     });
   };
 
-  const menuItems = [
-    { title: "Pagina de inicio", icon: "🏠" },
-    { title: "Solicitar un pago", icon: "💸" },
-    { title: "Estado de solicitudes", icon: "📊" },
-    { title: "Reportes de actividad", icon: "📝" },
-    { title: "Centro de administración", icon: "⚙️" },
-    { title: "Cerrar sesión", icon: "🚪" },
-  ];
-
-  const handleMenuItemClick = (item) => {
-    setActiveMenuItem(item.title);
-    if (item.title === "Cerrar sesión") {
-      setIsLoggingOut(true);
-      setTimeout(() => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        navigate("/");
-      }, 500);
-    } else if (item.title === "Pagina de inicio") {
-      navigate("/home");
-    } else if (item.title === "Centro de administración") {
-      navigate("/usuarios");
-    } else if (item.title === "Solicitar un pago" || item.title === "Estado de solicitudes") {
-      // Ya estamos en solicitudes, cerrar menú
-      setIsMenuOpen(false);
-    } else {
-      setIsMenuOpen(false);
-    }
-  };
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
@@ -147,6 +119,7 @@ const SolicitudesPage = () => {
       fecha_limite_pago: "",
       soporte_url: "",
     });
+    setEditandoId(null);
     setShowModal(true);
     setError("");
     setSuccess("");
@@ -172,6 +145,12 @@ const SolicitudesPage = () => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    if (!formData.departamento.trim() || !formData.monto || !formData.concepto.trim()) {
+      setError("Por favor completa todos los campos requeridos");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -189,30 +168,39 @@ const SolicitudesPage = () => {
       setShowModal(false);
       fetchSolicitudes();
     } catch (err) {
-      const mensaje = err.response?.data?.error || "Error al crear solicitud";
+      const mensaje = err.response?.data?.error || "Error al guardar";
       setError(mensaje);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApproval = async () => {
-    if (!selectedSolicitud || !approvalData.estado) return;
+  const handleApproval = (solicitud) => {
+    setSelectedSolicitud(solicitud);
+    setApprovalData({ estado: "", comentario_aprobador: "" });
+    setShowApprovalModal(true);
+  };
+
+  const handleApprovalSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!approvalData.estado) {
+      setError("Por favor selecciona un estado");
+      return;
+    }
 
     setLoading(true);
+
     try {
-      await SolicitudService.actualizarEstado(
-        selectedSolicitud.id_solicitud,
-        approvalData.estado,
-        approvalData.comentario
-      );
-      setSuccess(`Solicitud ${approvalData.estado} correctamente`);
+      await SolicitudService.actualizarEstado(selectedSolicitud.id_solicitud, approvalData);
+      setSuccess("Estado actualizado correctamente");
       setShowApprovalModal(false);
-      setSelectedSolicitud(null);
-      setApprovalData({ estado: "", comentario: "" });
       fetchSolicitudes();
     } catch (err) {
-      setError("Error al actualizar estado de solicitud");
+      const mensaje = err.response?.data?.error || "Error al actualizar";
+      setError(mensaje);
     } finally {
       setLoading(false);
     }
@@ -233,86 +221,33 @@ const SolicitudesPage = () => {
     }
   };
 
-  const getEstadoBadge = (estado) => {
-    const estados = {
-      pendiente: { color: "warning", text: "Pendiente", icon: "⏳" },
-      autorizada: { color: "success", text: "Autorizada", icon: "✅" },
-      rechazadas: { color: "danger", text: "Rechazada", icon: "❌" },
+  const getStatusBadge = (estado) => {
+    const statusConfig = {
+      pendiente: { label: "Pendiente", class: "status-pending" },
+      autorizada: { label: "Autorizada", class: "status-approved" },
+      rechazada: { label: "Rechazada", class: "status-rejected" },
+      pagada: { label: "Pagada", class: "status-paid" },
     };
-    return estados[estado] || { color: "secondary", text: estado, icon: "❓" };
+    
+    const config = statusConfig[estado] || statusConfig.pendiente;
+    return <span className={`status-badge ${config.class}`}>{config.label}</span>;
   };
+
+  const filteredSolicitudes = solicitudes.filter(solicitud => 
+    filterStatus === "todas" || solicitud.estado === filterStatus
+  );
 
   return (
     <div className="app-container" role="main">
-      {/* Sidebar */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            className={`sidebar ${isMenuOpen ? 'open' : ''}`}
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%", opacity: isLoggingOut ? 0 : 1 }}
-            transition={{
-              type: "spring",
-              damping: 20,
-              stiffness: 150,
-              duration: isLoggingOut ? 0.5 : 0,
-            }}
-            aria-label="Menu lateral"
-            ref={sidebarRef}
-          >
-            <div className="user-profile">
-              <img src="/b.png" alt="Avatar del usuario" className="user-avatar" />
-              <div className="user-details">
-                <p className="user-name">{user?.nombre || 'Usuario'}</p>
-                <span className="user-role">
-                  {user?.rol === 'admin_general' ? 'Administrador' : 
-                   user?.rol === 'solicitante' ? 'Solicitante' :
-                   user?.rol === 'aprobador' ? 'Aprobador' :
-                   user?.rol === 'pagador_banca' ? 'Pagador' : user?.rol}
-                </span>
-                <div className="user-time">
-                  <small>{formatTime(currentTime)}</small>
-                </div>
-              </div>
-            </div>
-            <nav className="menu" role="navigation">
-              <ul>
-                {menuItems.map((item, index) => (
-                  <motion.li
-                    key={item.title}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{
-                      scale: 1.05,
-                      backgroundColor: "rgba(255, 255, 255, 0.15)",
-                    }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleMenuItemClick(item)}
-                    className={activeMenuItem === item.title ? "active" : ""}
-                    aria-label={item.title}
-                  >
-                    <span className="menu-icon" aria-hidden="true">
-                      {item.icon}
-                    </span>
-                    {item.title}
-                  </motion.li>
-                ))}
-              </ul>
-            </nav>
-            <motion.button
-              className="close-btn"
-              onClick={() => setIsMenuOpen(false)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              aria-label="Cerrar menú"
-            >
-              ✕
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Sidebar Component */}
+      <Sidebar
+        isOpen={isMenuOpen}
+        onClose={closeMenu}
+        activeMenuItem={activeMenuItem}
+        setActiveMenuItem={setActiveMenuItem}
+        isLoggingOut={isLoggingOut}
+        setIsLoggingOut={setIsLoggingOut}
+      />
 
       {/* Main Content */}
       <motion.div
@@ -336,7 +271,7 @@ const SolicitudesPage = () => {
               className="menu-button"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={toggleMenu}
               aria-label="Abrir menú"
             >
               <span>☰</span>
@@ -350,17 +285,15 @@ const SolicitudesPage = () => {
               </div>
             </div>
 
-            {isSolicitante && (
-              <motion.button
-                className="add-solicitud-button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={openNewSolicitudModal}
-                aria-label="Nueva solicitud"
-              >
-                <span>+ Nueva Solicitud</span>
-              </motion.button>
-            )}
+            <motion.button
+              className="add-solicitud-button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={openNewSolicitudModal}
+              aria-label="Nueva solicitud"
+            >
+              <span>+ Nueva Solicitud</span>
+            </motion.button>
           </div>
 
           {/* Page Title */}
@@ -369,24 +302,9 @@ const SolicitudesPage = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
-            style={{ paddingTop: "0px" }}
           >
-            <h1
-              className="page-title"
-              style={{
-                fontFamily: "'Montserrat', sans-serif",
-                color: "#fff",
-                fontWeight: 700,
-                letterSpacing: "0.5px"
-              }}
-            >
-              {isSolicitante ? "Mis Solicitudes" : "Gestión de Solicitudes"}
-            </h1>
-            <p className="page-subtitle">
-              {isSolicitante 
-                ? "Crea y gestiona tus solicitudes de pago" 
-                : "Supervisa y procesa las solicitudes de pago del sistema"}
-            </p>
+            <h1 className="page-title">Gestión de Solicitudes de Pago</h1>
+            <p className="page-subtitle">Administra todas las solicitudes de pago del sistema</p>
           </motion.div>
 
           {/* Stats Dashboard */}
@@ -398,25 +316,25 @@ const SolicitudesPage = () => {
           >
             <StatsWidget
               title="Total Solicitudes"
-              value={solicitudesStats.total}
-              icon="📋"
+              value={solicitudes.length}
+              icon="📄"
               color="blue"
             />
             <StatsWidget
               title="Pendientes"
-              value={solicitudesStats.pendientes}
+              value={solicitudes.filter(s => s.estado === 'pendiente').length}
               icon="⏳"
               color="orange"
             />
             <StatsWidget
-              title="Autorizadas"
-              value={solicitudesStats.autorizadas}
+              title="Aprobadas"
+              value={solicitudes.filter(s => s.estado === 'autorizada').length}
               icon="✅"
               color="green"
             />
             <StatsWidget
               title="Rechazadas"
-              value={solicitudesStats.rechazadas}
+              value={solicitudes.filter(s => s.estado === 'rechazada').length}
               icon="❌"
               color="red"
             />
@@ -448,6 +366,26 @@ const SolicitudesPage = () => {
             )}
           </AnimatePresence>
 
+          {/* Filter Controls */}
+          <motion.div
+            className="filter-controls"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.6 }}
+          >
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="filter-select"
+            >
+              <option value="todas">Todas las solicitudes</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="autorizada">Autorizadas</option>
+              <option value="rechazada">Rechazadas</option>
+              <option value="pagada">Pagadas</option>
+            </select>
+          </motion.div>
+
           {/* Solicitudes Table */}
           <motion.div
             className="solicitudes-table-container"
@@ -475,84 +413,75 @@ const SolicitudesPage = () => {
               <table className="solicitudes-table">
                 <thead>
                   <tr>
+                    <th>ID</th>
                     <th>Departamento</th>
-                    <th>Monto</th>
                     <th>Concepto</th>
+                    <th>Monto</th>
                     <th>Estado</th>
-                    <th>Fecha Límite</th>
+                    <th>Fecha</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {solicitudes.map((solicitud, index) => {
-                    const estadoInfo = getEstadoBadge(solicitud.estado);
-                    return (
-                      <motion.tr
-                        key={solicitud.id_solicitud}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05, duration: 0.3 }}
-                        whileHover={{ backgroundColor: "#f8fafc" }}
-                      >
-                        <td>{solicitud.departamento}</td>
-                        <td>${parseFloat(solicitud.monto).toLocaleString()}</td>
-                        <td>{solicitud.concepto}</td>
-                        <td>
-                          <span className={`status-badge status-${estadoInfo.color}`}>
-                            {estadoInfo.icon} {estadoInfo.text}
-                          </span>
-                        </td>
-                        <td>{new Date(solicitud.fecha_limite_pago).toLocaleDateString()}</td>
-                        <td>
-                          <div className="action-buttons">
-                            {(isAprobador || isAdmin) && solicitud.estado === 'pendiente' && (
-                              <motion.button
-                                className="approve-button"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => {
-                                  setSelectedSolicitud(solicitud);
-                                  setShowApprovalModal(true);
-                                }}
-                                disabled={loading}
-                              >
-                                <span>⚖️</span>
-                                <span>Evaluar</span>
-                              </motion.button>
-                            )}
-                            {isAdmin && (
-                              <motion.button
-                                className="delete-button"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleEliminar(solicitud.id_solicitud)}
-                                disabled={loading}
-                              >
-                                <span>🗑️</span>
-                                <span>Eliminar</span>
-                              </motion.button>
-                            )}
-                          </div>
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                  {solicitudes.length === 0 && (
-                    <tr>
-                      <td colSpan="6" className="empty-state">
-                        <div className="empty-content">
-                          <span className="empty-icon">📋</span>
-                          <p>No hay solicitudes registradas</p>
-                          {isSolicitante && (
+                  {filteredSolicitudes.map((solicitud, index) => (
+                    <motion.tr
+                      key={solicitud.id_solicitud}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                      whileHover={{ backgroundColor: "#f8fafc" }}
+                    >
+                      <td>#{solicitud.id_solicitud}</td>
+                      <td>{solicitud.departamento}</td>
+                      <td className="concept-cell">{solicitud.concepto}</td>
+                      <td className="amount-cell">${solicitud.monto?.toLocaleString()}</td>
+                      <td>{getStatusBadge(solicitud.estado)}</td>
+                      <td>{new Date(solicitud.fecha_solicitud).toLocaleDateString()}</td>
+                      <td>
+                        <div className="action-buttons">
+                          {(user.rol === 'aprobador' || user.rol === 'admin_general') && 
+                           solicitud.estado === 'pendiente' && (
                             <motion.button
-                              className="add-first-solicitud-btn"
+                              className="approve-button"
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={openNewSolicitudModal}
+                              onClick={() => handleApproval(solicitud)}
+                              disabled={loading}
                             >
-                              Crear primera solicitud
+                              <span>✓</span>
+                              <span>Revisar</span>
                             </motion.button>
                           )}
+                          {user.rol === 'admin_general' && (
+                            <motion.button
+                              className="delete-button"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleEliminar(solicitud.id_solicitud)}
+                              disabled={loading}
+                            >
+                              <span>🗑️</span>
+                              <span>Eliminar</span>
+                            </motion.button>
+                          )}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                  {filteredSolicitudes.length === 0 && (
+                    <tr>
+                      <td colSpan="7" className="empty-state">
+                        <div className="empty-content">
+                          <span className="empty-icon">📄</span>
+                          <p>No hay solicitudes {filterStatus !== "todas" ? `con estado "${filterStatus}"` : "registradas"}</p>
+                          <motion.button
+                            className="add-first-solicitud-btn"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={openNewSolicitudModal}
+                          >
+                            Crear primera solicitud
+                          </motion.button>
                         </div>
                       </td>
                     </tr>
@@ -582,13 +511,10 @@ const SolicitudesPage = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-header">
-                <div className="modal-title-section">
-                  <h3>💰 Nueva Solicitud de Pago</h3>
-                  <p>Complete todos los campos para crear su solicitud</p>
-                </div>
+                <h3>Nueva Solicitud de Pago</h3>
                 <motion.button
                   className="modal-close"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShowModal(false)}
                 >
@@ -597,249 +523,124 @@ const SolicitudesPage = () => {
               </div>
               
               <form onSubmit={handleSubmit} className="solicitud-form">
-                {/* Información Básica */}
-                <div className="form-section">
-                  <div className="section-title">
-                    <span className="section-icon">📋</span>
-                    <h4>Información Básica</h4>
-                  </div>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="departamento">
-                        <span className="label-icon">🏢</span>
-                        Departamento
-                        <span className="required">*</span>
-                      </label>
-                      <motion.input
-                        type="text"
-                        id="departamento"
-                        name="departamento"
-                        placeholder="Ej: Sistemas, Contabilidad, Marketing"
-                        value={formData.departamento}
-                        onChange={handleChange}
-                        disabled={loading}
-                        required
-                        whileFocus={{ scale: 1.02 }}
-                        className="form-input"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="monto">
-                        <span className="label-icon">💵</span>
-                        Monto
-                        <span className="required">*</span>
-                      </label>
-                      <motion.input
-                        type="number"
-                        id="monto"
-                        name="monto"
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        value={formData.monto}
-                        onChange={handleChange}
-                        disabled={loading}
-                        required
-                        whileFocus={{ scale: 1.02 }}
-                        className="form-input"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Información de Pago */}
-                <div className="form-section">
-                  <div className="section-title">
-                    <span className="section-icon">🏦</span>
-                    <h4>Información de Pago</h4>
-                  </div>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="cuenta_destino">
-                        <span className="label-icon">🔢</span>
-                        Cuenta Destino
-                        <span className="required">*</span>
-                      </label>
-                      <motion.input
-                        type="text"
-                        id="cuenta_destino"
-                        name="cuenta_destino"
-                        placeholder="Ej: 1234-5678-9012-3456"
-                        value={formData.cuenta_destino}
-                        onChange={handleChange}
-                        disabled={loading}
-                        required
-                        whileFocus={{ scale: 1.02 }}
-                        className="form-input"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="fecha_limite_pago">
-                        <span className="label-icon">📅</span>
-                        Fecha Límite de Pago
-                        <span className="required">*</span>
-                      </label>
-                      <motion.input
-                        type="date"
-                        id="fecha_limite_pago"
-                        name="fecha_limite_pago"
-                        value={formData.fecha_limite_pago}
-                        onChange={handleChange}
-                        disabled={loading}
-                        required
-                        whileFocus={{ scale: 1.02 }}
-                        className="form-input"
-                        min={new Date().toISOString().split('T')[0]}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Descripción */}
-                <div className="form-section">
-                  <div className="section-title">
-                    <span className="section-icon">📝</span>
-                    <h4>Descripción del Pago</h4>
-                  </div>
-                  
-                  <div className="form-group full-width">
-                    <label htmlFor="concepto">
-                      <span className="label-icon">💭</span>
-                      Concepto
-                      <span className="required">*</span>
-                    </label>
-                    <motion.textarea
-                      id="concepto"
-                      name="concepto"
-                      placeholder="Describa detalladamente el concepto del pago, incluyendo servicios, productos o gastos a cubrir..."
-                      value={formData.concepto}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="departamento">Departamento</label>
+                    <input
+                      type="text"
+                      id="departamento"
+                      name="departamento"
+                      placeholder="Ej: Recursos Humanos"
+                      value={formData.departamento}
                       onChange={handleChange}
                       disabled={loading}
-                      rows="4"
                       required
-                      whileFocus={{ scale: 1.01 }}
-                      className="form-textarea"
                     />
-                    <div className="textarea-counter">
-                      {formData.concepto.length}/500 caracteres
-                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="monto">Monto</label>
+                    <input
+                      type="number"
+                      id="monto"
+                      name="monto"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      value={formData.monto}
+                      onChange={handleChange}
+                      disabled={loading}
+                      required
+                    />
                   </div>
                 </div>
 
-                {/* Documentos de Soporte */}
-                <div className="form-section">
-                  <div className="section-title">
-                    <span className="section-icon">📎</span>
-                    <h4>Documentos de Soporte</h4>
-                    <span className="section-subtitle">Opcional - Adjunte enlaces a documentos relevantes</span>
-                  </div>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="factura_url">
-                        <span className="label-icon">🧾</span>
-                        URL de Factura
-                      </label>
-                      <motion.input
-                        type="url"
-                        id="factura_url"
-                        name="factura_url"
-                        placeholder="https://ejemplo.com/factura.pdf"
-                        value={formData.factura_url}
-                        onChange={handleChange}
-                        disabled={loading}
-                        whileFocus={{ scale: 1.02 }}
-                        className="form-input"
-                      />
-                    </div>
+                <div className="form-group">
+                  <label htmlFor="concepto">Concepto</label>
+                  <textarea
+                    id="concepto"
+                    name="concepto"
+                    placeholder="Describe el motivo del pago..."
+                    value={formData.concepto}
+                    onChange={handleChange}
+                    disabled={loading}
+                    rows="3"
+                    required
+                  />
+                </div>
 
-                    <div className="form-group">
-                      <label htmlFor="soporte_url">
-                        <span className="label-icon">📄</span>
-                        URL de Soporte
-                      </label>
-                      <motion.input
-                        type="url"
-                        id="soporte_url"
-                        name="soporte_url"
-                        placeholder="https://ejemplo.com/soporte.pdf"
-                        value={formData.soporte_url}
-                        onChange={handleChange}
-                        disabled={loading}
-                        whileFocus={{ scale: 1.02 }}
-                        className="form-input"
-                      />
-                    </div>
+                <div className="form-group">
+                  <label htmlFor="cuenta_destino">Cuenta Destino</label>
+                  <input
+                    type="text"
+                    id="cuenta_destino"
+                    name="cuenta_destino"
+                    placeholder="Número de cuenta o información bancaria"
+                    value={formData.cuenta_destino}
+                    onChange={handleChange}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="fecha_limite_pago">Fecha Límite de Pago</label>
+                    <input
+                      type="date"
+                      id="fecha_limite_pago"
+                      name="fecha_limite_pago"
+                      value={formData.fecha_limite_pago}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
                   </div>
                 </div>
 
-                {/* Resumen */}
-                {(formData.departamento || formData.monto || formData.concepto) && (
-                  <motion.div 
-                    className="form-section summary-section"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="section-title">
-                      <span className="section-icon">📊</span>
-                      <h4>Resumen de la Solicitud</h4>
-                    </div>
-                    <div className="summary-content">
-                      {formData.departamento && (
-                        <div className="summary-item">
-                          <strong>Departamento:</strong> {formData.departamento}
-                        </div>
-                      )}
-                      {formData.monto && (
-                        <div className="summary-item">
-                          <strong>Monto:</strong> ${parseFloat(formData.monto || 0).toLocaleString()}
-                        </div>
-                      )}
-                      {formData.concepto && (
-                        <div className="summary-item">
-                          <strong>Concepto:</strong> {formData.concepto.substring(0, 100)}{formData.concepto.length > 100 ? '...' : ''}
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="factura_url">URL de Factura</label>
+                    <input
+                      type="url"
+                      id="factura_url"
+                      name="factura_url"
+                      placeholder="https://ejemplo.com/factura.pdf"
+                      value={formData.factura_url}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="soporte_url">URL de Soporte</label>
+                    <input
+                      type="url"
+                      id="soporte_url"
+                      name="soporte_url"
+                      placeholder="https://ejemplo.com/soporte.pdf"
+                      value={formData.soporte_url}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
 
                 <div className="form-actions">
                   <motion.button
                     type="button"
                     className="cancel-button"
-                    whileHover={{ scale: 1.05, backgroundColor: "#ef4444" }}
+                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowModal(false)}
                     disabled={loading}
                   >
-                    <span>❌</span>
                     Cancelar
                   </motion.button>
-                  
                   <motion.button
                     type="submit"
                     className="submit-button"
-                    whileHover={{ scale: 1.05, backgroundColor: "#059669" }}
+                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    disabled={loading || !formData.departamento || !formData.monto || !formData.concepto}
+                    disabled={loading}
                   >
-                    {loading ? (
-                      <>
-                        <span className="loading-spinner">⏳</span>
-                        Creando...
-                      </>
-                    ) : (
-                      <>
-                        <span>💾</span>
-                        Crear Solicitud
-                      </>
-                    )}
+                    {loading ? "Creando..." : "Crear Solicitud"}
                   </motion.button>
                 </div>
               </form>
@@ -850,7 +651,7 @@ const SolicitudesPage = () => {
 
       {/* Modal for Approval */}
       <AnimatePresence>
-        {showApprovalModal && selectedSolicitud && (
+        {showApprovalModal && (
           <motion.div
             className="modal-overlay"
             initial={{ opacity: 0 }}
@@ -866,7 +667,7 @@ const SolicitudesPage = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-header">
-                <h3>Evaluar Solicitud</h3>
+                <h3>Revisar Solicitud #{selectedSolicitud?.id_solicitud}</h3>
                 <motion.button
                   className="modal-close"
                   whileHover={{ scale: 1.1 }}
@@ -877,21 +678,21 @@ const SolicitudesPage = () => {
                 </motion.button>
               </div>
               
-              <div className="approval-form">
-                <div className="solicitud-details">
-                  <h4>Detalles de la Solicitud</h4>
-                  <p><strong>Departamento:</strong> {selectedSolicitud.departamento}</p>
-                  <p><strong>Monto:</strong> ${parseFloat(selectedSolicitud.monto).toLocaleString()}</p>
-                  <p><strong>Concepto:</strong> {selectedSolicitud.concepto}</p>
-                  <p><strong>Cuenta Destino:</strong> {selectedSolicitud.cuenta_destino}</p>
-                </div>
+              <div className="solicitud-details">
+                <p><strong>Departamento:</strong> {selectedSolicitud?.departamento}</p>
+                <p><strong>Concepto:</strong> {selectedSolicitud?.concepto}</p>
+                <p><strong>Monto:</strong> ${selectedSolicitud?.monto?.toLocaleString()}</p>
+              </div>
 
+              <form onSubmit={handleApprovalSubmit} className="approval-form">
                 <div className="form-group">
                   <label htmlFor="estado">Decisión</label>
                   <select
                     id="estado"
+                    name="estado"
                     value={approvalData.estado}
                     onChange={(e) => setApprovalData({...approvalData, estado: e.target.value})}
+                    disabled={loading}
                     required
                   >
                     <option value="">-- Selecciona una decisión --</option>
@@ -901,13 +702,15 @@ const SolicitudesPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="comentario">Comentario</label>
+                  <label htmlFor="comentario_aprobador">Comentarios</label>
                   <textarea
-                    id="comentario"
-                    placeholder="Comentarios sobre la decisión"
-                    value={approvalData.comentario}
-                    onChange={(e) => setApprovalData({...approvalData, comentario: e.target.value})}
-                    rows="4"
+                    id="comentario_aprobador"
+                    name="comentario_aprobador"
+                    placeholder="Comentarios sobre la decisión..."
+                    value={approvalData.comentario_aprobador}
+                    onChange={(e) => setApprovalData({...approvalData, comentario_aprobador: e.target.value})}
+                    disabled={loading}
+                    rows="3"
                   />
                 </div>
 
@@ -923,17 +726,16 @@ const SolicitudesPage = () => {
                     Cancelar
                   </motion.button>
                   <motion.button
-                    type="button"
+                    type="submit"
                     className="submit-button"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={handleApproval}
-                    disabled={loading || !approvalData.estado}
+                    disabled={loading}
                   >
                     {loading ? "Procesando..." : "Confirmar Decisión"}
                   </motion.button>
                 </div>
-              </div>
+              </form>
             </motion.div>
           </motion.div>
         )}
