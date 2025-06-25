@@ -67,6 +67,10 @@ const HomePage = () => {
       }, 500);
     } else if (item.title === "Centro de administración") {
       navigate("/usuarios");
+    } else if (item.title === "Solicitar un pago") {
+      navigate("/solicitudes");
+    } else if (item.title === "Estado de solicitudes") {
+      navigate("/solicitudes");
     } else {
       setIsMenuOpen(false);
       // Aquí se pueden agregar más navegaciones según el item seleccionado
@@ -130,7 +134,8 @@ const HomePage = () => {
             }}
             aria-label="Menu lateral"
             ref={sidebarRef}
-          >            <div className="user-profile">
+          >
+            <div className="user-profile">
               <img src="/b.png" alt="Avatar del usuario" className="user-avatar" />
               <div className="user-details">
                 <p className="user-name">{user?.name || 'Administrador'}</p>
@@ -194,7 +199,8 @@ const HomePage = () => {
           transition={{ duration: 0.5 }}
           role="region"
           aria-label="Contenido principal"
-        >          {/* Header */}
+        >
+          {/* Header */}
           <div className="home-header">
             <motion.button
               className="menu-button"
@@ -223,7 +229,8 @@ const HomePage = () => {
               <span>Notificaciones</span>
               <span className="notification-badge">🔔</span>
               <span className="badge-count">3</span>
-            </motion.button>          </div>
+            </motion.button>
+          </div>
 
           {/* Main Content */}
           <div className="home-content">

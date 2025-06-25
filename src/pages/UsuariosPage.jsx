@@ -122,6 +122,8 @@ const UsuariosPage = () => {
       }, 500);
     } else if (item.title === "Pagina de inicio") {
       navigate("/home");
+    } else if (item.title === "Solicitar un pago") {
+      navigate("/solicitudes");
     } else {
       setIsMenuOpen(false);
     }
@@ -247,7 +249,8 @@ const UsuariosPage = () => {
   return (
     <div className="app-container" role="main">
       {/* Sidebar */}
-      <AnimatePresence>        {isMenuOpen && (
+      <AnimatePresence>
+        {isMenuOpen && (
           <motion.div
             className={`sidebar ${isMenuOpen ? 'open' : ''}`}
             initial={{ x: "-100%" }}
@@ -311,14 +314,17 @@ const UsuariosPage = () => {
             </motion.button>
           </motion.div>
         )}
-      </AnimatePresence>      {/* Main Content */}
+      </AnimatePresence>
+
+      {/* Main Content */}
       <motion.div
         className="main-content"
         animate={{ 
           marginLeft: screenSize > 768 && isMenuOpen ? "280px" : "0" 
         }}
         transition={{ type: "spring", damping: 20 }}
-      >        <motion.div
+      >
+        <motion.div
           className={`users-container ${screenSize <= 768 ? 'mobile-view' : ''}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -386,12 +392,6 @@ const UsuariosPage = () => {
               value={usuarios.filter(u => u.rol === 'admin_general').length}
               icon="⚙️"
               color="purple"
-            />
-            <StatsWidget
-              title="Usuarios Activos"
-              value={usuarios.length}
-              icon="✅"
-              color="green"
             />
             <StatsWidget
               title="Roles Diversos"

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/loginPage";
 import UsuariosPage from "./pages/UsuariosPage";
+import SolicitudesPage from "./pages/SolicitudesPage";
 import ProtectedRoute from "./ProtectedRoute";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import HomePage from "./pages/HomePage";
@@ -19,6 +20,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["admin_general"]}>
                 <UsuariosPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/solicitudes"
+            element={
+              <ProtectedRoute allowedRoles={["admin_general", "solicitante", "aprobador", "pagador_banca"]}>
+                <SolicitudesPage />
               </ProtectedRoute>
             }
           />

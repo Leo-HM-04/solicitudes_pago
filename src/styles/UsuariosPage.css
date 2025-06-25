@@ -634,7 +634,127 @@ html, body {
   transform: none;
 }
 
-/* Media queries optimizadas para evitar cortes */
+/* Sidebar styles - igual que home */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background: linear-gradient(180deg, 
+    rgba(30, 41, 59, 0.95) 0%, 
+    rgba(51, 65, 85, 0.95) 50%, 
+    rgba(30, 41, 59, 0.95) 100%
+  );
+  backdrop-filter: blur(20px);
+  color: white;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar.minimized {
+  overflow: visible;
+}
+
+.sidebar.minimized .user-profile {
+  padding: 1rem 0.5rem;
+  text-align: center;
+}
+
+.sidebar.minimized .user-avatar {
+  width: 40px;
+  height: 40px;
+}
+
+.sidebar.minimized .menu li {
+  justify-content: center;
+  padding: 1rem 0.5rem;
+}
+
+.sidebar.minimized .menu-icon {
+  font-size: 1.2rem;
+}
+
+/* Botón de toggle con el estilo original */
+.toggle-menu-btn {
+  position: absolute;
+  bottom: 20px;
+  right: -15px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 0.95) 0%, 
+    rgba(51, 65, 85, 0.95) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  z-index: 1001;
+  transition: all 0.3s ease;
+}
+
+.toggle-menu-btn:hover {
+  background: linear-gradient(135deg, 
+    rgba(51, 65, 85, 0.95) 0%, 
+    rgba(30, 41, 59, 0.95) 100%);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Ajuste del main content */
+.main-content {
+  margin-left: 280px;
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sidebar ajustes para minimización */
+.sidebar.minimized {
+  width: 80px;
+}
+
+.sidebar.minimized .user-profile {
+  padding: 1rem 0.5rem;
+  text-align: center;
+}
+
+.sidebar.minimized .user-avatar {
+  width: 45px;
+  height: 45px;
+  margin: 0 auto;
+}
+
+.sidebar.minimized .menu li {
+  justify-content: center;
+  padding: 1rem;
+}
+
+.sidebar.minimized .menu li:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  margin: 0 0.5rem;
+}
+
+/* Responsive - mantener comportamiento original en móviles */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+  }
+  
+  .toggle-menu-btn {
+    display: none;
+  }
+}
+
 @media (max-width: 1400px) {
   .users-container {
     padding: 1.8rem;
