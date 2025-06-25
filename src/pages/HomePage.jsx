@@ -121,13 +121,6 @@ const HomePage = () => {
               <span>☰</span>
               <span>Menú</span>
             </motion.button>
-            
-            <div className="header-info">
-              <div className="date-time">
-                <h3>{formatDate(currentTime)}</h3>
-                <p>{formatTime(currentTime)}</p>
-              </div>
-            </div>
 
             <motion.button
               className="notification-button"
@@ -142,15 +135,6 @@ const HomePage = () => {
 
           {/* Main Content */}
           <div className="home-content">
-            {/* Logo container en esquina superior derecha */}
-            <motion.div
-              className="logo-container"
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              <img src="#" alt="Logo Bechapra" />
-            </motion.div>
 
             {/* Contenido principal centrado */}
             <motion.div
@@ -197,6 +181,7 @@ const HomePage = () => {
                 Supervisa las transacciones, administra usuarios, genera reportes y mantén 
                 el control total del sistema financiero.
               </motion.p>
+
               <div className="action-buttons">
                 <motion.button
                   className="help-button primary"
@@ -205,21 +190,10 @@ const HomePage = () => {
                     boxShadow: "0 5px 15px rgba(30, 64, 175, 0.3)",
                   }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate("/usuarios")}
-                  aria-label="Ir a gestión de usuarios"
+                  onClick={() => navigate("#")}
+                  aria-label="?Nesesitas ayuda?"
                 >
-                  Gestionar Usuarios
-                </motion.button>
-                <motion.button
-                  className="help-button secondary"
-                  whileHover={{
-                    scale: 1.05,
-                    boxShadow: "0 5px 15px rgba(0, 0, 0, 0.1)",
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label="Ver reportes"
-                >
-                  Ver Reportes
+                  <span>¿Necesitas ayuda?</span>
                 </motion.button>
               </div>
             </motion.div>
